@@ -1,0 +1,332 @@
+package main
+
+//token invalidliðinde bile expired diyor onu çöz
+import (
+	"bufio"
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+)
+
+//key for blowfish
+var MyEncryptKey = []byte("selamýn-aleyküm-adým-azrail-1")
+
+const (
+	TokenFile = "token.json"
+	URL       = "https://127.0.0.1:8000/"
+)
+
+type ResponseData struct {
+	Token  string `json:"Token"`
+	Status string `json:"Status"`
+	Type   string `json:"Type"`
+	Ip     string `json:"Ip"`
+	Mtu    int    `json:"Mtu"`
+}
+
+type Message struct {
+	Token string `json:"Token"`
+}
+type User struct {
+	Name     string `json:"Name"`
+	Password string `json:"Password`
+}
+
+func main() {
+	//bad sertificate err
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	CreateFile("ClientNameAndPassword.json")
+	NameAndPasswordExist := CheckNameAndPasswordExist("ClientNameAndPassword.json")
+	if NameAndPasswordExist == 1 {
+
+		CreateFile(TokenFile)
+		TokenExist := CheckTokenExist(TokenFile)
+		if TokenExist == 1 {
+			TokenURL := URL + "token"
+			RequestedToken := new(Message)
+			JSONErr := json.Unmarshal([]byte(GetToken()), &RequestedToken)
+
+			if JSONErr != nil {
+				panic(JSONErr)
+			}
+			Req, RequestErr := http.NewRequest("POST", TokenURL, bytes.NewBuffer([]byte(RequestedToken.Token)))
+			if RequestErr != nil {
+				panic(RequestErr)
+			}
+			Client := &http.Client{}
+			Resp, DoErr := Client.Do(Req)
+
+			if DoErr != nil {
+				panic(DoErr)
+			}
+			defer Resp.Body.Close()
+
+			Body, _ := ioutil.ReadAll(Resp.Body)
+			//fmt.Println(string(Body))
+			//returns interface with encrypted from server
+			PlainText, err := Decrypt(Body, MyEncryptKey)
+			if err != nil {
+				// TODO: Properly handle error
+				log.Fatal(err)
+			}
+			//fmt.Printf(string(PlainText))
+
+			Splited := strings.Split(string(PlainText), "?")
+			/*fmt.Println("<<<<<<<<<<<<<<<<<<<<<<")
+			fmt.Println(s)
+			fmt.Println("<<<<<<<<<<<<<<<<<<<<<<")*/
+			if len(Splited) > 1 {
+				for i := range Splited[:len(Splited)-1] {
+					BodyData := new(ResponseData)
+					JSONErr := json.Unmarshal([]byte(Splited[i]), &BodyData)
+
+					if JSONErr != nil {
+						panic(JSONErr)
+					}
+					if BodyData.Status == "2" {
+						DeleteFile(TokenFile)
+						fmt.Println("your token was expired. please login")
+						CreateFile(TokenFile)
+
+					} else if BodyData.Status == "3" {
+						DeleteFile(TokenFile)
+						fmt.Println("your token is invalid. please login")
+						CreateFile(TokenFile)
+
+					} else {
+						fmt.Printf("type>>>  "+BodyData.Type+"   Ip>>>>> "+BodyData.Ip+" MTU>>>>>> %v\n", BodyData.Mtu)
+
+						//fmt.Println((BodyData.Datas[0]), BodyData.Type)
+						/*Data := new(Data)
+						JSONErr := json.([]byte(BodyData.Datas[0]), &Data)
+						fmt.Println(Data)*/
+						//returns interface with encrypted from server
+
+						//fmt.Printf("type:" + BodyData.Type + "IP:" + Data.Ip) //
+
+					}
+
+				}
+			} else {
+				for i := range Splited {
+					BodyData := new(ResponseData)
+					JSONErr := json.Unmarshal([]byte(Splited[i]), &BodyData)
+					if JSONErr != nil {
+						panic(JSONErr)
+					}
+					if BodyData.Status == "2" {
+						DeleteFile(TokenFile)
+						fmt.Println("your token was expired. please login")
+						CreateFile(TokenFile)
+
+					} else if BodyData.Status == "3" {
+						DeleteFile(TokenFile)
+						fmt.Println("your token is invalid. please login")
+						CreateFile(TokenFile)
+
+					} else {
+						//returns interface with encrypted from server
+
+						fmt.Printf(string(PlainText)) //
+
+					}
+
+				}
+			}
+
+		}
+		if TokenExist == 0 {
+
+			LoginURL := URL + "login"
+
+			var JSONStr = []byte(GetNameAndPassword("ClientNameAndPassword.json"))
+
+			Req, RequestErr := http.NewRequest("POST", LoginURL, bytes.NewBuffer(JSONStr))
+			if RequestErr != nil {
+				panic(RequestErr)
+			}
+			Client := &http.Client{}
+			resp, err := Client.Do(Req)
+			if err != nil {
+				panic(err)
+			}
+			defer resp.Body.Close()
+			Body, _ := ioutil.ReadAll(resp.Body)
+			Data := new(ResponseData)
+			UnmarshalErr := json.Unmarshal(Body, &Data)
+
+			if UnmarshalErr != nil {
+				panic(UnmarshalErr)
+			}
+			if Data.Status == "0" {
+				TokenData := &Message{Token: Data.Token}
+
+				JSONData, MarshalErr := json.Marshal(TokenData)
+				if MarshalErr != nil {
+					log.Println(MarshalErr)
+				}
+
+				WriteTokenJSON(string(JSONData))
+				fmt.Println("we give you a token")
+
+			} else {
+				fmt.Println("your name or password is wrong")
+
+			}
+
+		}
+	} else {
+		fmt.Println("you dont have a name and pasword")
+
+	}
+}
+
+// function for decode encryption
+func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	Chip, ChiperErr := aes.NewCipher(key)
+	if ChiperErr != nil {
+		return nil, ChiperErr
+	}
+
+	Gcm, err := cipher.NewGCM(Chip)
+	if err != nil {
+		return nil, err
+	}
+
+	NonceSize := Gcm.NonceSize()
+	if len(ciphertext) < NonceSize {
+		return nil, errors.New("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:NonceSize], ciphertext[NonceSize:]
+	return Gcm.Open(nil, nonce, ciphertext, nil)
+}
+
+//creat file
+func CreateFile(FileName string) {
+	// check if file exists
+	var _, err = os.Stat(FileName)
+
+	// create file if not exists
+	if os.IsNotExist(err) {
+		var File, err = os.Create(FileName)
+		if IsError(err) {
+			return
+		}
+		defer File.Close()
+	}
+
+}
+
+//delete file
+func DeleteFile(FileName string) {
+	var err = os.Remove(FileName)
+	if IsError(err) {
+		return
+	}
+}
+
+//geting name and password with a json file
+func GetNameAndPassword(FileName string) string {
+	File, err := os.Open(FileName)
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+	}
+
+	Scanner := bufio.NewScanner(File)
+	Scanner.Split(bufio.ScanLines)
+	var TxtLines []string
+
+	for Scanner.Scan() {
+		TxtLines = append(TxtLines, Scanner.Text())
+	}
+
+	File.Close()
+	return TxtLines[0]
+}
+
+//controling Client_NameAndPassword.json file is empty
+func CheckNameAndPasswordExist(FileName string) int {
+
+	File, FileOpenErr := os.Open(FileName)
+	if FileOpenErr != nil {
+		log.Fatalf("failed opening file: %s", FileOpenErr)
+	}
+
+	Scanner := bufio.NewScanner(File)
+	Scanner.Split(bufio.ScanLines)
+	var TxtLines []string
+
+	for Scanner.Scan() {
+		TxtLines = append(TxtLines, Scanner.Text())
+
+	}
+
+	File.Close()
+	return len(TxtLines)
+}
+
+//controling token.json file is empty
+func CheckTokenExist(FileName string) int {
+
+	File, err := os.Open(FileName)
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+	}
+
+	Scanner := bufio.NewScanner(File)
+	Scanner.Split(bufio.ScanLines)
+	var TxtLines []string
+
+	for Scanner.Scan() {
+		TxtLines = append(TxtLines, Scanner.Text())
+
+	}
+
+	File.Close()
+	return len(TxtLines)
+}
+
+//getting token from json file
+func GetToken() string {
+
+	Token, err := ioutil.ReadFile(TokenFile)
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return "dosya boþ"
+	}
+	return string(Token)
+}
+
+//write a token to token.json if it's not exist it is creat a token.json file
+
+func WriteTokenJSON(token string) {
+	var File, err = os.OpenFile(TokenFile, os.O_RDWR, 0644)
+	if IsError(err) {
+		return
+	}
+	defer File.Close()
+	// Write some text line-by-line to file.
+	_, err = File.WriteString(token)
+	if IsError(err) {
+		return
+	}
+}
+
+//err printer
+func IsError(err error) bool {
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return (err != nil)
+}
