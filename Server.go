@@ -17,11 +17,11 @@ func main() {
 	flag.Parse()
 
 	Handler := RequestHandler
-	if Compress {
+	if *Compress {
 		Handler = fasthttp.CompressHandler(Handler)
 	}
 
-	if ListenErr := fasthttp.ListenAndServeTLS(Addr, "MyCertificate.crt", "MyKey.key", Handler); ListenErr != nil {
+	if ListenErr := fasthttp.ListenAndServeTLS(*Addr, "MyCertificate.crt", "MyKey.key", Handler); ListenErr != nil {
 		log.Fatalf("Error in ListenAndServeTLS: %s", ListenErr)
 	}
 
@@ -31,17 +31,17 @@ func main() {
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 	if string(ctx.Path()) == "/login" {
-		if ctx.Request.Header.Cookie("name") == "selahattin" {
-			if ctx.Request.Header.Cookie("password")== "asdqwezxc"{
-				ctx.Response.Header.Set("status","1")
-			}
-			else{
-				ctx.Response.Header.Set("status","2")
+
+		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
+			if string(ctx.Request.Header.Peek("password")) == "asdqwezxc" {
+				ctx.Response.Header.Set("status", "1")
+			} else {
+				ctx.Response.Header.Set("status", "2")
 
 			}
-			
-		}else{
-			ctx.Response.Header.Set("status","3")
+
+		} else {
+			ctx.Response.Header.Set("status", "3")
 
 		}
 

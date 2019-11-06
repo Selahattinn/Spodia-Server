@@ -2,24 +2,22 @@ package main
 
 //token invalidli�inde bile expired diyor onu ��z
 import (
+	"bytes"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 )
 
-//key for blowfish
-var MyEncryptKey = []byte("selam�n-aleyk�m-ad�m-azrail-1")
-
 const (
-	TokenFile = "token.json"
-	URL       = "https://127.0.0.1:8000/"
+	URL = "https://127.0.0.1:8000/"
 )
 
 func main() {
+	//bad sertificate err
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	LoginURL := URL + "login"
-
-	var JSONStr = []byte(GetNameAndPassword("ClientNameAndPassword.json"))
-	Req, RequestErr := http.Get(LoginURL)
+	Req, RequestErr := http.NewRequest("POST", LoginURL, bytes.NewBuffer([]byte("")))
 	Req.Header.Add("name", "selahattin")
 	Req.Header.Add("password", "asdqwezxc")
 
@@ -31,15 +29,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer resp.Body.Close()
 	fmt.Println(resp.Header.Get("status"))
 
-}
-
-//err printer
-func IsError(err error) bool {
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	return (err != nil)
 }
