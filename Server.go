@@ -31,8 +31,18 @@ func main() {
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 	if string(ctx.Path()) == "/login" {
-		if string(ctx.Request.Body()) == "selo" {
-			ctx.SetBodyString("okey")
+		if ctx.Request.Header.Cookie("name") == "selahattin" {
+			if ctx.Request.Header.Cookie("password")== "asdqwezxc"{
+				ctx.Response.Header.Set("status","1")
+			}
+			else{
+				ctx.Response.Header.Set("status","2")
+
+			}
+			
+		}else{
+			ctx.Response.Header.Set("status","3")
+
 		}
 
 	}
