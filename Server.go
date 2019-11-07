@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/valyala/fasthttp"
@@ -20,7 +21,7 @@ func main() {
 		Handler = fasthttp.CompressHandler(Handler)
 	}
 
-	if ListenErr := fasthttp.ListenAndServeTLS(*Addr, "MyCertificate.crt", "MyKey.key", Handler); ListenErr != nil {
+	if ListenErr := fasthttp.ListenAndServe(*Addr, Handler); ListenErr != nil {
 		log.Fatalf("Error in ListenAndServeTLS: %s", ListenErr)
 	}
 
@@ -29,9 +30,11 @@ func main() {
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 	password := "asdqwezxc"
 	if string(ctx.Path()) == "/login" {
-
+		fmt.Println("aa")
 		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
+			fmt.Println("bb")
 			if string(ctx.Request.Header.Peek("password")) == "asdqwezxc" {
+				fmt.Println("cc")
 				ctx.Response.Header.Set("status", "1")
 			} else {
 				ctx.Response.Header.Set("status", "2")
@@ -48,6 +51,7 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
 			password = string(ctx.Request.Header.Peek("resetpassword"))
 			ctx.Response.Header.Set("status", "4")
+			fmt.Println(password + "   değiştirildi")
 
 		} else {
 			ctx.Response.Header.Set("status", "5")
