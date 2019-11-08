@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Addr     = flag.String("addr", ":1200", "TCP address to listen to")
+	Addr     = flag.String("addr", ":8080", "TCP address to listen to")
 	Compress = flag.Bool("compress", false, "Whether to enable transparent response compression")
 )
 
@@ -29,6 +29,7 @@ func main() {
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 	password := "asdqwezxc"
+	fmt.Println("2222")
 	if string(ctx.Path()) == "/login" {
 		fmt.Println("aa")
 		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
@@ -45,6 +46,7 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 			ctx.Response.Header.Set("status", "3")
 
 		}
+		ctx.SetBody([]byte("TEST"))
 
 	}
 	if string(ctx.Path()) == "/resetPassword" {
