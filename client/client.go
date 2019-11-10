@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	URL = "https://192.168.1.21:8080/"
+	URL = "https://192.168.1.21:8080/" //herkes kendi ipsine göre düzenlesin
 )
 
 func main() {

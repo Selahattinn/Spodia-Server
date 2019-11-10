@@ -21,7 +21,7 @@ func main() {
 		Handler = fasthttp.CompressHandler(Handler)
 	}
 
-	if ListenErr := fasthttp.ListenAndServe(*Addr, Handler); ListenErr != nil {
+	if ListenErr := fasthttp.ListenAndServeTLS(*Addr, "MyCertificate.crt", "MyKey.key", Handler); ListenErr != nil {
 		log.Fatalf("Error in ListenAndServeTLS: %s", ListenErr)
 	}
 
