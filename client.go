@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	URL = "http://127.0.0.1:1200/"
+	URL = "https://192.168.1.21:8080/"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	LoginURL := URL + "login"
-	Req, RequestErr := http.NewRequest("POST", LoginURL, bytes.NewBuffer([]byte("")))
+	Req, RequestErr := http.NewRequest("POST", LoginURL, bytes.NewBuffer([]byte("aa")))
 	Req.Header.Add("name", "selahattin")
 	Req.Header.Add("password", "asdqwezxc")
 
