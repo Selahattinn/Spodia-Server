@@ -30,7 +30,6 @@ func main() {
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 	fmt.Println("2222")
 	ctx.SetBodyString("test")
-	
 	ctx.SetContentType("text/plain; charset=utf8")
 
 	// Set arbitrary headers
