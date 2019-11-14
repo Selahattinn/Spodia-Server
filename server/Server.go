@@ -28,38 +28,9 @@ func main() {
 }
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
-	password := "asdqwezxc"
 	fmt.Println("2222")
-	if string(ctx.Path()) == "/login" {
-		fmt.Println("aa")
-		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
-			fmt.Println("bb")
-			if string(ctx.Request.Header.Peek("password")) == "asdqwezxc" {
-				fmt.Println("cc")
-				ctx.Response.Header.Set("status", "1")
-			} else {
-				ctx.Response.Header.Set("status", "2")
-
-			}
-
-		} else {
-			ctx.Response.Header.Set("status", "3")
-
-		}
-		ctx.SetBody([]byte("TEST"))
-
-	}
-	if string(ctx.Path()) == "/resetPassword" {
-		if string(ctx.Request.Header.Peek("name")) == "selahattin" {
-			password = string(ctx.Request.Header.Peek("resetpassword"))
-			ctx.Response.Header.Set("status", "4")
-			fmt.Println(password + "   değiştirildi")
-
-		} else {
-			ctx.Response.Header.Set("status", "5")
-		}
-	}
-
+	ctx.SetBodyString("test")
+	
 	ctx.SetContentType("text/plain; charset=utf8")
 
 	// Set arbitrary headers
