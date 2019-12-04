@@ -37,13 +37,13 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 			// Set arbitrary headers
 
-			ctx.Response.SetBodyString("Connected!")
+			ctx.Response.SetBodyString("Connected")
 		} else {
 			fmt.Println("Password is wrong!")
 		}
 	} else {
 		fmt.Println("User is wrong!")
-		ctx.Response.SetBodyString("Hatalı deneme!")
+		ctx.Response.SetBodyString("Invalid login")
 
 	}
 
