@@ -28,12 +28,24 @@ func main() {
 }
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
-	fmt.Println("2222")
-	ctx.SetBodyString("test")
-	ctx.SetContentType("text/plain; charset=utf8")
-
-	// Set arbitrary headers
 	ctx.Response.Header.Set("X-My-Header", "my-header-value")
+	if string(ctx.Request.Header.Peek("User")) == ("Furkan") {
+		if string(ctx.Request.Header.Peek("Pass")) == ("admin") {
+			fmt.Println("Connected")
+
+			ctx.SetContentType("text/plain; charset=utf8")
+
+			// Set arbitrary headers
+
+			ctx.Response.SetBodyString("Connected!")
+		} else {
+			fmt.Println("Password is wrong!")
+		}
+	} else {
+		fmt.Println("User is wrong!")
+		ctx.Response.SetBodyString("Hatalı deneme!")
+
+	}
 
 }
 
