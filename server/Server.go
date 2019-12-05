@@ -40,6 +40,7 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 			ctx.Response.SetBodyString("Connected")
 		} else {
 			fmt.Println("Password is wrong!")
+			ctx.Response.SetBodyString("password worng")
 		}
 	} else {
 		fmt.Println("User is wrong!")
