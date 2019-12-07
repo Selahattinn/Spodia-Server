@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -32,21 +33,40 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 	if string(ctx.Request.Header.Peek("User")) == ("Furkan") {
 		if string(ctx.Request.Header.Peek("Pass")) == ("admin") {
 			fmt.Println("Connected")
+			jsonHandleFunc(ctx)
 
-			ctx.SetContentType("text/plain; charset=utf8")
-
-			// Set arbitrary headers
-
-			ctx.Response.SetBodyString("Connected")
 		} else {
 			fmt.Println("Password is wrong!")
-			ctx.Response.SetBodyString("password worng")
 		}
 	} else {
 		fmt.Println("User is wrong!")
-		ctx.Response.SetBodyString("Invalid login")
-
 	}
+
+}
+
+type Profile struct {
+	Name   string
+	Parola string
+}
+
+func jsonHandleFunc(ctx *fasthttp.RequestCtx) {
+	m := make(map[string]string)
+	m["name"] = string(ctx.Request.Header.Peek("User"))
+	m["pass"] = string(ctx.Request.Header.Peek("Pass"))
+	/*profile := {
+	'Name':   string(ctx.Response.Header.Peek("User")),
+	'Parola': string(ctx.Response.Header.Peek("Pass"))}
+	*/
+	outjson, err := json.Marshal(m)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Response.SetStatusCode(fasthttp.StatusOK)
+	//json.NewEncoder(ctx.Response.BodyWriter()).Encode(profile)
+	//ctx.Response.BodyWriter().Write(outjson)
+	ctx.Response.SetBody(outjson)
+	fmt.Fprint(ctx, string(outjson))
 
 }
 
