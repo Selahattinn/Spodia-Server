@@ -5,16 +5,22 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/valyala/fasthttp"
 )
 
 var (
-	Addr     = flag.String("addr", ":8080", "TCP address to listen to")
-	Compress = flag.Bool("compress", false, "Whether to enable transparent response compression")
+	mySigningKey = []byte("AllYourBase")
+	Addr         = flag.String("addr", ":8080", "TCP address to listen to")
+	Compress     = flag.Bool("compress", false, "Whether to enable transparent response compression")
 )
 
 func main() {
+	token := CreatToken()
+	x := ParseErrorChecking(token)
+	fmt.Println(x)
 	flag.Parse()
 
 	Handler := RequestHandler
@@ -27,13 +33,74 @@ func main() {
 	}
 
 }
+func ParseErrorChecking(tokenString1 string) string {
+	// Token from another example.  This token is expired
+
+	Token, ParseErr := jwt.Parse(tokenString1, func(token *jwt.Token) (interface{}, error) {
+		return []byte(mySigningKey), nil
+	})
+
+	if ParseErr != nil {
+		return "invalid"
+	}
+	if Token.Valid == true {
+		if claims, ok := Token.Claims.(jwt.MapClaims); ok && Token.Valid {
+			x := string(claims["name"].(string))
+			return x
+		} else {
+			fmt.Println(ParseErr)
+			return ""
+		}
+
+	} else if ValidationError, boolOk := ParseErr.(*jwt.ValidationError); boolOk {
+		if ValidationError.Errors&jwt.ValidationErrorMalformed != 0 {
+			return "invalid"
+		} else if ValidationError.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+			// Token is either expired or not active yet
+			return "expired"
+		} else {
+			return "Couldn't handle this token"
+		}
+	} else {
+		return "Couldn't handle this token"
+	}
+}
+func CreatToken() string {
+	res1D := &response1{
+		Name:   "admin",
+		Parola: "1234"}
+	res1B, _ := json.Marshal(res1D)
+	fmt.Println(string(res1B))
+	Data := new(User)
+	JSONErr := json.Unmarshal(res1B, &Data)
+	if JSONErr != nil {
+		fmt.Println("asdasd")
+
+		panic(JSONErr)
+	}
+
+	// Create the Claims
+
+	Token := jwt.New(jwt.SigningMethodHS256)
+	Claims := Token.Claims.(jwt.MapClaims)
+	Claims["parola"] = Data.Parola
+	Claims["name"] = Data.Name
+	Claims["exp"] = time.Now().Add(time.Second * 30).Unix()
+	TokenString, SigningErr := Token.SignedString(mySigningKey)
+	if SigningErr != nil {
+		fmt.Println("someting went wrong ", SigningErr)
+		TokenString = ""
+	}
+	return TokenString
+}
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
+
 	ctx.Response.Header.Set("X-My-Header", "my-header-value")
 	if string(ctx.Request.Header.Peek("User")) == ("Furkan") {
 		if string(ctx.Request.Header.Peek("Pass")) == ("admin") {
 			fmt.Println("Connected")
-			jsonHandleFunc(ctx)
+			//jsonHandleFunc(ctx)
 
 		} else {
 			fmt.Println("Password is wrong!")
@@ -44,30 +111,13 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 }
 
-type Profile struct {
+type response1 struct {
 	Name   string
 	Parola string
 }
-
-func jsonHandleFunc(ctx *fasthttp.RequestCtx) {
-	m := make(map[string]string)
-	m["name"] = string(ctx.Request.Header.Peek("User"))
-	m["pass"] = string(ctx.Request.Header.Peek("Pass"))
-	/*profile := {
-	'Name':   string(ctx.Response.Header.Peek("User")),
-	'Parola': string(ctx.Response.Header.Peek("Pass"))}
-	*/
-	outjson, err := json.Marshal(m)
-	if err != nil {
-		fmt.Println(err)
-	}
-	ctx.Response.Header.Set("Content-Type", "application/json")
-	ctx.Response.SetStatusCode(fasthttp.StatusOK)
-	//json.NewEncoder(ctx.Response.BodyWriter()).Encode(profile)
-	//ctx.Response.BodyWriter().Write(outjson)
-	ctx.Response.SetBody(outjson)
-	fmt.Fprint(ctx, string(outjson))
-
+type User struct {
+	Name   string `json:"name"`
+	Parola string `json:"parola"`
 }
 
 /*func IsError(err error) bool {
@@ -76,5 +126,4 @@ func jsonHandleFunc(ctx *fasthttp.RequestCtx) {
 	}
 
 	return (err != nil)
-}
-*/
+}*/
