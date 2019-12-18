@@ -18,10 +18,6 @@ var (
 )
 
 func main() {
-	token := CreatToken()
-	x := ParseErrorChecking(token)
-	fmt.Println(x)
-	flag.Parse()
 
 	Handler := RequestHandler
 	if *Compress {
@@ -46,6 +42,7 @@ func ParseErrorChecking(tokenString1 string) string {
 	if Token.Valid == true {
 		if claims, ok := Token.Claims.(jwt.MapClaims); ok && Token.Valid {
 			x := string(claims["name"].(string))
+			fmt.Printf("Token valid")
 			return x
 		} else {
 			fmt.Println(ParseErr)
@@ -65,8 +62,8 @@ func ParseErrorChecking(tokenString1 string) string {
 		return "Couldn't handle this token"
 	}
 }
-func CreatToken() string {
-	res1D := &response1{
+func CreateToken(data *User) string {
+	/*res1D := &response1{
 		Name:   "admin",
 		Parola: "1234"}
 	res1B, _ := json.Marshal(res1D)
@@ -77,10 +74,10 @@ func CreatToken() string {
 		fmt.Println("asdasd")
 
 		panic(JSONErr)
-	}
+	}*/
 
 	// Create the Claims
-
+	Data := data
 	Token := jwt.New(jwt.SigningMethodHS256)
 	Claims := Token.Claims.(jwt.MapClaims)
 	Claims["parola"] = Data.Parola
@@ -95,12 +92,26 @@ func CreatToken() string {
 }
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
+	Data := new(User)
+	JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
+	if JSONErr != nil {
+		fmt.Println("request json error")
 
+		panic(JSONErr)
+	}
 	ctx.Response.Header.Set("X-My-Header", "my-header-value")
-	if string(ctx.Request.Header.Peek("User")) == ("Furkan") {
-		if string(ctx.Request.Header.Peek("Pass")) == ("admin") {
+
+	if Data.Name == ("Furkan") {
+		if Data.Parola == ("admin") {
 			fmt.Println("Connected")
-			//jsonHandleFunc(ctx)
+
+			token := CreateToken(Data)
+			x := ParseErrorChecking(token)
+			if x == Data.Name {
+				res1B, _ := json.Marshal(Data)
+				fmt.Println(string(res1B))
+				ctx.Response.SetBody(res1B)
+			}
 
 		} else {
 			fmt.Println("Password is wrong!")
