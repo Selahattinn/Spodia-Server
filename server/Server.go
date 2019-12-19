@@ -92,6 +92,7 @@ func CreateToken(data *User) string {
 }
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
+	fmt.Println("asdasdasd")
 	if string(ctx.Path()) == "/loginWithToken" {
 		fmt.Println("tokenle giriş yapıldı")
 		data := ParseErrorChecking(string(ctx.Request.Body()))
@@ -114,6 +115,26 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 			panic(JSONErr)
 		}
+		if Data.Name == ("Furkan") {
+			if Data.Parola == ("admin") {
+				fmt.Println("Connected")
+
+				token := CreateToken(Data)
+				postData := PostData{
+					Token:  token,
+					Status: 1,
+				}
+				res1B, _ := json.Marshal(postData)
+				ctx.Response.SetBody((res1B))
+				fmt.Println(string(res1B))
+			} else {
+				fmt.Println("Password is wrong!")
+			}
+
+		} else {
+			fmt.Println("User is wrong!")
+		}
+
 		fmt.Println("tokensiz ilk giriş")
 		fmt.Println("gelen json formatındaki tokeni olmayan bilgiyi databseden kontrol edip adama token döndür.")
 	}
@@ -125,7 +146,7 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 	if string(ctx.Path()) == "/resetPassword" {
 		fmt.Println("adamın şifresini sıfırlamadan önce böyle bir kullanıcı var mmı diye check et eğer varsa adama bir şifre yolla eğer bu da doğruysa adamın şifresini resetle")
 	}
-	Data := new(User)
+	/*Data := new(User)
 	JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
 	if JSONErr != nil {
 		fmt.Println("request json error")
@@ -151,7 +172,7 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 		}
 	} else {
 		fmt.Println("User is wrong!")
-	}
+	}*/
 
 }
 
@@ -162,6 +183,11 @@ type response1 struct {
 type User struct {
 	Name   string `json:"name"`
 	Parola string `json:"parola"`
+}
+type PostData struct {
+	Name   string `json:"name"`
+	Token  string `json:"token"`
+	Status int    `json:"status"`
 }
 
 /*func IsError(err error) bool {
