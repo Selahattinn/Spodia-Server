@@ -92,6 +92,39 @@ func CreateToken(data *User) string {
 }
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
+	if string(ctx.Path()) == "/loginWithToken" {
+		fmt.Println("tokenle giriş yapıldı")
+		data := ParseErrorChecking(string(ctx.Request.Body()))
+		if data == "invalid" {
+			fmt.Println("token valid değil")
+		} else if data == "expired" {
+			fmt.Println("token expired olmuş")
+		} else if data == "Couldn't handle this token" {
+			fmt.Println("sistemsel bir hata")
+		} else {
+			fmt.Println("token doğru databaseden adamı bul")
+		}
+
+	}
+	if string(ctx.Path()) == "/login" {
+		Data := new(User)
+		JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
+		if JSONErr != nil {
+			fmt.Println("request json error")
+
+			panic(JSONErr)
+		}
+		fmt.Println("tokensiz ilk giriş")
+		fmt.Println("gelen json formatındaki tokeni olmayan bilgiyi databseden kontrol edip adama token döndür.")
+	}
+	if string(ctx.Path()) == "/signUp" {
+
+		fmt.Println("kayıt isteği geldi. databasede böyle biri var mı kontrol et")
+		fmt.Println("biri ilk kayıt olduğunda ona token yolla ")
+	}
+	if string(ctx.Path()) == "/resetPassword" {
+		fmt.Println("adamın şifresini sıfırlamadan önce böyle bir kullanıcı var mmı diye check et eğer varsa adama bir şifre yolla eğer bu da doğruysa adamın şifresini resetle")
+	}
 	Data := new(User)
 	JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
 	if JSONErr != nil {
