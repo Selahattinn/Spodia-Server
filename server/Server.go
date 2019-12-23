@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/smtp"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -90,6 +91,27 @@ func CreateToken(data *User) string {
 	}
 	return TokenString
 }
+func send(body string) {
+	from := "selahattinceylan9622@gmail.com"
+	pass := "yvyscqiupogkmecj"
+	to := "furkansahinmail@gmail.com"
+
+	msg := "From: " + from + "\n" +
+		"To: " + to + "\n" +
+		"Subject: Hello there\n\n" +
+		body
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, []byte(msg))
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return
+	}
+
+	log.Print("sent, visit http://foobarbazz.mailinator.com")
+}
 
 func RequestHandler(ctx *fasthttp.RequestCtx) {
 	fmt.Println("asdasdasd")
@@ -108,6 +130,8 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 	}
 	if string(ctx.Path()) == "/login" {
+		send("Google Hesabınıza gidin.\nSol gezinme panelinde Güvenlik'i seçin.\nGoogle'da oturum açma panelinde Uygulama Şifreleri'ni tıklayın.\n Bu seçeneği görmüyorsanız:Hesabınızda 2 Adımlı Doğrulama ayarlanmamıştır.\n2 Adımlı Doğrulama yalnızca güvenlik anahtarları için yapılandırılmıştır.\nHesabınızı iş, okul veya başka bir kuruluş üzerinden edinmişsinizdir.\nHesabınız için Gelişmiş Koruma'yı açmışsınızdır.\nAltta Uygulama seç'i seçip kullandığınız uygulamayı belirleyin.\nCihaz seç'i seçip kullandığınız cihazı belirleyin.Oluştur'u seçin.\nUygulama Şifresini girmek için talimatları uygulayın. Uygulama Şifresi, cihazınızdaki sarı çubukta yer alan 16 karakterli koddur.\nBitti'yi seçin.Çoğu zaman, Uygulama şifresini her uygulama veya cihaz için sadece bir defa girmeniz yeterli olacağından bu şifreyi ezberlemeniz gerekmeyecektir.")
+
 		Data := new(User)
 		JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
 		if JSONErr != nil {
@@ -137,10 +161,27 @@ func RequestHandler(ctx *fasthttp.RequestCtx) {
 
 		fmt.Println("tokensiz ilk giriş")
 		fmt.Println("gelen json formatındaki tokeni olmayan bilgiyi databseden kontrol edip adama token döndür.")
+
 	}
 	if string(ctx.Path()) == "/signUp" {
 
-		fmt.Println("kayıt isteği geldi. databasede böyle biri var mı kontrol et")
+		//kayıt isteği geldi databasede kontrol et böyle kullanıcı var mı diye
+		Data := new(User)
+		JSONErr := json.Unmarshal(ctx.Request.Body(), &Data)
+		if JSONErr != nil {
+			fmt.Println("request json error")
+
+			panic(JSONErr)
+		}
+		//yoksa ise databaseye ekle ve adama bir token yolla
+		token := CreateToken(Data)
+		postData := PostData{
+			Token:  token,
+			Status: 1,
+		}
+		res1B, _ := json.Marshal(postData)
+		ctx.Response.SetBody((res1B))
+
 		fmt.Println("biri ilk kayıt olduğunda ona token yolla ")
 	}
 	if string(ctx.Path()) == "/resetPassword" {
